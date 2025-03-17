@@ -58,6 +58,7 @@ const fetchAllMedia = async (
   const stmt = promisePool.format(sql, params);
 
   const [rows] = await promisePool.execute<RowDataPacket[] & MediaItem[]>(stmt);
+  rows.reverse();
   return rows;
 };
 

@@ -1,6 +1,7 @@
 "use client";
 import CustomError from "@/classes/CustomError";
 import { fetchData } from "@/lib/functions";
+import { MediaResponse, MessageResponse } from "hybrid-types";
 import { useRouter } from "next/navigation";
 
 const MediaForm = () => {
@@ -18,14 +19,59 @@ const MediaForm = () => {
         method: "POST",
         body: formData, // formdatan kanssa ei headereita
       };
-      const uploadResult = await fetchData("/api/media", options);
+      const uploadResult = await fetchData<MediaResponse>(
+        "/api/media",
+        options
+      );
+
+      // lisätään tagi lomakkeesta
+      // tagi objekti
+      const tagData = {
+        tag_name: formData.get("tag") as string,
+        media_id: uploadResult.media.media_id,
+      };
+      const tagOptions = {
+        method: "POST",
+        headers: {
+          "Content-type": "application/json",
+        },
+        body: JSON.stringify(tagData),
+      };
+
+      const tagResult = await fetchData<MessageResponse>(
+        "/api/tags",
+        tagOptions
+      );
+      if (!tagResult) {
+        throw new CustomError("Error adding tag", 500);
+      }
+
+      // lisätään sovelluskohtainen tag
+      const apptagData = {
+        tag_name: "omaAppitagi",
+        media_id: uploadResult.media.media_id,
+      };
+      const apptagOptions = {
+        method: "POST",
+        headers: {
+          "Content-type": "application/json",
+        },
+        body: JSON.stringify(apptagData),
+      };
+
+      const apptagResult = await fetchData<MessageResponse>(
+        "/api/tags",
+        apptagOptions
+      );
+      if (!apptagResult) {
+        throw new CustomError("Error adding tag", 500);
+      }
 
       // if result OK, redirect to the home page to see the uploaded media
-      if(!uploadResult){
+      if (!uploadResult) {
         throw new CustomError("Error while uploading media", 500);
       }
-      router.push('/')
-      
+      router.push("/");
     } catch (error) {
       console.error(error);
     }
@@ -58,6 +104,21 @@ const MediaForm = () => {
             type="text"
             name="description"
             id="description"
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+          />
+        </div>
+        {/* TAGI */}
+        <div className="mb-4">
+          <label
+            htmlFor="tag"
+            className="block text-gray-700 text-sm font-bold mb-2"
+          >
+            Tag
+          </label>
+          <input
+            type="text"
+            name="tag"
+            id="tag"
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
           />
         </div>
